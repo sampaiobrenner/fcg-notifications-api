@@ -1,0 +1,7 @@
+# Revisores solicitados automaticamente nos PRs (ver wiki > Como trabalhamos).
+# Responsavel pela frente notifications-api:
+*                 @samueltorres-io
+# Plataforma (Docker, Kubernetes e CI) revisa junto:
+/Dockerfile       @samueltorres-io @sampaiobrenner
+/k8s/             @samueltorres-io @sampaiobrenner
+/.github/         @sampaiobrenner
