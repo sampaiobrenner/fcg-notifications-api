@@ -1,8 +1,8 @@
 # fcg-notifications-api
 
-Microsservico de **Notificacoes**: envia (simula, logando no console) e-mails de boas-vindas e de confirmacao de compra. Consome `UserCreatedEvent` e `PaymentProcessedEvent`.
+Microsserviço de **Notificações**: simula o envio de e-mails de boas-vindas e de confirmação de compra por logs no console. Consome `UserCreatedEvent` e `PaymentProcessedEvent` usando RabbitMQ e MassTransit.
 
-Parte da plataforma **FIAP Cloud Games (FCG) - Fase 2**. Os contratos de integracao (eventos, JWT, convencoes) sao definidos no repositorio [`fcg-contracts`](https://github.com/sampaiobrenner/fcg-contracts) e a orquestracao (docker-compose e guia de Kubernetes) no [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
+Parte da plataforma **FIAP Cloud Games (FCG) - Fase 2**. Este repositório é uma cópia de trabalho pessoal baseada no projeto do grupo originalmente publicado por [Matheus Sampaio](https://github.com/sampaiobrenner/fcg-notifications-api). Os contratos de integração (eventos, JWT e convenções) estão em [`fcg-contracts`](https://github.com/sampaiobrenner/fcg-contracts), e a orquestração (Docker Compose e guia de Kubernetes) está em [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
 
 ## Stack
 
@@ -10,7 +10,7 @@ Parte da plataforma **FIAP Cloud Games (FCG) - Fase 2**. Os contratos de integra
 
 ## Arquitetura
 
-Camadas com dependencia estritamente para dentro: `WebApi -> Infrastructure -> Application -> Domain`.
+Camadas com dependência estritamente para dentro: `WebApi -> Infrastructure -> Application -> Domain`.
 
 ```
 src/
@@ -55,7 +55,7 @@ WebApi/Games/CreateGame/CreateGameEndpoint.cs
 
 ## Executando localmente
 
-Pre-requisitos: .NET SDK 10 e a infraestrutura do [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration) (`docker compose up -d`).
+Pré-requisitos: .NET SDK 10 e a infraestrutura do [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration) (`docker compose up -d`).
 
 ```bash
 dotnet run --project src/Fcg.Notifications.WebApi
@@ -84,9 +84,9 @@ Workflow unico [`ci.yml`](.github/workflows/ci.yml):
 
 | Job | Quando | O que faz |
 |---|---|---|
-| `build-test` | PR, push na `main`, tags `v*` | restore, build, testes com cobertura e analise no SonarCloud (projeto `sampaiobrenner_fcg-notifications-api`, requer o secret `SONAR_TOKEN`) |
+| `build-test` | PR, push na `main`, tags `v*` | restore, build, testes com cobertura e análise opcional no SonarCloud (configurar `SONAR_TOKEN` e as variáveis `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`) |
 | `docker` | PR | build da imagem |
-| `publish` | push na `main` e tags `v*`, apos os testes | publica `ghcr.io/sampaiobrenner/fcg-notifications-api` (`latest`, `sha-<commit>`, semver) usando o [`docker-publish.yml`](https://github.com/sampaiobrenner/fcg-orchestration/blob/main/.github/workflows/docker-publish.yml) do `fcg-orchestration` |
+| `publish` | push na `main` e tags `v*`, após os testes | publica `ghcr.io/samueltorres-io/fcg-notifications-api` (`latest`, `sha-<commit>`, semver) diretamente no GitHub Container Registry |
 
 ## Docker
 
@@ -114,6 +114,8 @@ kubectl apply -f k8s/
 | `Database__ApplyMigrationsOnStartup` | ConfigMap | Aplica migrations no startup | `true` |
 | `RabbitMq__Host` | ConfigMap | Host do RabbitMQ | `rabbitmq` |
 | `RabbitMq__VirtualHost` | ConfigMap | Virtual host | `/` |
+| `Messaging__Queues__NotificationsUserCreated` | ConfigMap | Fila do evento de cadastro | `notifications.user-created` |
+| `Messaging__Queues__NotificationsPaymentProcessed` | ConfigMap | Fila do resultado do pagamento | `notifications.payment-processed` |
 | `RabbitMq__Username` | Secret | Usuario do RabbitMQ | `fcg` |
 | `RabbitMq__Password` | Secret | Senha do RabbitMQ | `***` |
 | `Jwt__Issuer` | ConfigMap | Emissor do token | `fcg-users-api` |

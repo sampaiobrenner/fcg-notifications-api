@@ -9,5 +9,7 @@ data:
   Database__ApplyMigrationsOnStartup: "true"
   RabbitMq__Host: "rabbitmq"
   RabbitMq__VirtualHost: "/"
+  Messaging__Queues__NotificationsUserCreated: "notifications.user-created"
+  Messaging__Queues__NotificationsPaymentProcessed: "notifications.payment-processed"
   Jwt__Issuer: "fcg-users-api"
   Jwt__Audience: "fcg"
