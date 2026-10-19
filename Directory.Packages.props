@@ -1,10 +1,6 @@
 <Project>
 
-  <!--
-    Central Package Management.
-    Licenciamento: MassTransit 9+, MediatR 13+ e FluentAssertions 8+ sao comerciais.
-    Mantenha as linhas 8.x / 12.x / 7.x (Apache 2.0) enquanto o projeto for academico.
-  -->
+  <!-- Centraliza as versões e mantém as dependências nas licenças previstas para o projeto acadêmico. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>

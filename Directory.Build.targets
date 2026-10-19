@@ -4,7 +4,7 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- Gera a classe fortemente tipada de cada Properties/*Resources.resx via MSBuild (funciona fora do Visual Studio). -->
+  <!-- Gera classes fortemente tipadas para os recursos durante a compilação, inclusive fora do Visual Studio. -->
   <ItemGroup>
     <EmbeddedResource Update="Properties\*Resources.resx">
       <Generator>MSBuild:Compile</Generator>
