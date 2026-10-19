@@ -10,10 +10,8 @@ public sealed class UserCreatedConsumer(ILogger<UserCreatedConsumer> logger) : I
         var user = context.Message;
 
         logger.LogInformation(
-            "E-mail de boas-vindas simulado para {Email} (usuário {UserId}, nome {Name}). Evento {EventId}.",
-            user.Email,
+            "E-mail de boas-vindas simulado para o usuário {UserId}. Evento {EventId}.",
             user.UserId,
-            user.Name,
             user.EventId);
 
         return Task.CompletedTask;

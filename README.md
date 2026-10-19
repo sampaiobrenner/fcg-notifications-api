@@ -48,17 +48,21 @@ cd fcg-orchestration
 docker compose up -d postgres rabbitmq
 ```
 
-Em outro terminal, na raiz deste repositório, configure a conexão com esses serviços e inicie a API:
+Em outro terminal, na raiz deste repositório, grave as configurações locais no armazenamento de User Secrets do .NET e inicie a API:
 
 ```bash
-export ConnectionStrings__Default='Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg'
-export RabbitMq__Host=localhost
-export RabbitMq__Username=fcg
-export RabbitMq__Password=fcg
-export Jwt__Key='fcg-dev-only-signing-key-change-me-0123456789'
+dotnet user-secrets set 'ConnectionStrings:Default' 'Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Host' 'localhost' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Username' 'fcg' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Password' 'fcg' --project src/Fcg.Notifications.WebApi
+JWT_KEY="$(openssl rand -base64 48)"
+dotnet user-secrets set 'Jwt:Key' "$JWT_KEY" --project src/Fcg.Notifications.WebApi
+unset JWT_KEY
 
 dotnet run --project src/Fcg.Notifications.WebApi
 ```
+
+As credenciais de desenvolvimento ficam fora do repositório. O arquivo `appsettings.Development.json` não é versionado.
 
 As migrations pendentes do banco são aplicadas na inicialização quando `Database__ApplyMigrationsOnStartup=true`, valor padrão do projeto.
 
