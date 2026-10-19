@@ -2,6 +2,6 @@
 # Responsavel pela frente notifications-api:
 *                 @samueltorres-io
 # Plataforma (Docker, Kubernetes e CI) revisa junto:
-/Dockerfile       @samueltorres-io @sampaiobrenner
-/k8s/             @samueltorres-io @sampaiobrenner
-/.github/         @sampaiobrenner
+/Dockerfile       @samueltorres-io
+/k8s/             @samueltorres-io
+/.github/         @samueltorres-io

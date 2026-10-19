@@ -17,7 +17,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: notifications-api
-          image: ghcr.io/sampaiobrenner/fcg-notifications-api:latest
+          image: ghcr.io/samueltorres-io/fcg-notifications-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

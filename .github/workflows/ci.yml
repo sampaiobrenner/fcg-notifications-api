@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,18 +26,18 @@ jobs:
           global-json-file: global.json
 
       - uses: actions/setup-java@v4
-        if: env.SONAR_TOKEN != ''
+        if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANIZATION != ''
         with:
           distribution: temurin
           java-version: 17
 
       - name: Sonar - inicio
-        if: env.SONAR_TOKEN != ''
+        if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANIZATION != ''
         run: |
           dotnet tool install --global dotnet-sonarscanner
           dotnet sonarscanner begin \
-            /k:"sampaiobrenner_${{ github.event.repository.name }}" \
-            /o:"sampaiobrenner" \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.cs.opencover.reportsPaths="TestResults/*/coverage.opencover.xml" \
@@ -50,7 +52,7 @@ jobs:
         run: dotnet test --no-build -c Release --logger trx --results-directory TestResults --collect:"XPlat Code Coverage;Format=opencover"
 
       - name: Sonar - fim
-        if: env.SONAR_TOKEN != ''
+        if: env.SONAR_TOKEN != '' && env.SONAR_PROJECT_KEY != '' && env.SONAR_ORGANIZATION != ''
         run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
       - uses: actions/upload-artifact@v4
@@ -73,9 +75,35 @@ jobs:
     name: publish
     if: github.event_name != 'pull_request'
     needs: build-test
-    uses: sampaiobrenner/fcg-orchestration/.github/workflows/docker-publish.yml@main
-    with:
-      image-name: fcg-notifications-api
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar metadados da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Autenticar no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir e publicar imagem
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
