@@ -143,6 +143,13 @@ A análise SonarCloud é opcional. Para habilitá-la, configure o secret `SONAR_
 
 ## Estrutura do repositório
 
+Cada projeto em `src/` possui um README com seu papel, os arquivos principais e os pontos em aberto:
+
+- [Domain](src/Fcg.Notifications.Domain/README.md)
+- [Application](src/Fcg.Notifications.Application/README.md)
+- [Infrastructure](src/Fcg.Notifications.Infrastructure/README.md)
+- [WebApi](src/Fcg.Notifications.WebApi/README.md)
+
 ```text
 src/
   Fcg.Notifications.Domain/         Tipos e regras compartilhadas do domínio
