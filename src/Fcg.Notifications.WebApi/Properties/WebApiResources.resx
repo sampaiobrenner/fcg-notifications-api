@@ -36,4 +36,10 @@
   <data name="ChaveJwtInvalida" xml:space="preserve">
     <value>A chave JWT (Jwt__Key) deve possuir ao menos {0} caracteres.</value>
   </data>
+  <data name="EmissorJwtAusente" xml:space="preserve">
+    <value>O emissor JWT (Jwt__Issuer) deve ser configurado.</value>
+  </data>
+  <data name="AudienciaJwtAusente" xml:space="preserve">
+    <value>A audiência JWT (Jwt__Audience) deve ser configurada.</value>
+  </data>
 </root>

@@ -12,12 +12,17 @@ public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (!_validators.Any())
+        var validators = _validators.ToArray();
+        if (validators.Length == 0)
             return await next(cancellationToken);
 
-        var context = new ValidationContext<TRequest>(request);
-        var results = await Task.WhenAll(_validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-        var failures = results.SelectMany(r => r.Errors).Where(f => f is not null).ToList();
+        var failures = new List<FluentValidation.Results.ValidationFailure>();
+        foreach (var validator in validators)
+        {
+            var context = new ValidationContext<TRequest>(request);
+            var result = await validator.ValidateAsync(context, cancellationToken);
+            failures.AddRange(result.Errors.Where(failure => failure is not null));
+        }
 
         if (failures.Count > 0)
             throw new ValidationException(failures);

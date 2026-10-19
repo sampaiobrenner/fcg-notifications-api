@@ -48,23 +48,27 @@ cd fcg-orchestration
 docker compose up -d postgres rabbitmq
 ```
 
-Em outro terminal, na raiz deste repositório, configure a conexão com esses serviços e inicie a API:
+Em outro terminal, na raiz deste repositório, grave as configurações locais no armazenamento de User Secrets do .NET e inicie a API:
 
 ```bash
-export ConnectionStrings__Default='Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg'
-export RabbitMq__Host=localhost
-export RabbitMq__Username=fcg
-export RabbitMq__Password=fcg
-export Jwt__Key='fcg-dev-only-signing-key-change-me-0123456789'
+dotnet user-secrets set 'ConnectionStrings:Default' 'Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Host' 'localhost' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Username' 'fcg' --project src/Fcg.Notifications.WebApi
+dotnet user-secrets set 'RabbitMq:Password' 'fcg' --project src/Fcg.Notifications.WebApi
+JWT_KEY="$(openssl rand -base64 48)"
+dotnet user-secrets set 'Jwt:Key' "$JWT_KEY" --project src/Fcg.Notifications.WebApi
+unset JWT_KEY
 
 dotnet run --project src/Fcg.Notifications.WebApi
 ```
+
+As credenciais de desenvolvimento ficam fora do repositório. O arquivo `appsettings.Development.json` não é versionado.
 
 As migrations pendentes do banco são aplicadas na inicialização quando `Database__ApplyMigrationsOnStartup=true`, valor padrão do projeto.
 
 | Endereço | Uso |
 |---|---|
-| <http://localhost:5104/scalar/v1> | Documentação OpenAPI/Scalar |
+| <http://localhost:5104/scalar/v1> | Documentação OpenAPI/Scalar (Development e Testing) |
 | <http://localhost:5104/health/live> | Verificação de processo ativo |
 | <http://localhost:5104/health/ready> | Verificação de prontidão do banco de dados |
 
@@ -133,11 +137,18 @@ dotnet test
 
 ## CI/CD
 
-O workflow [`ci.yml`](.github/workflows/ci.yml) restaura, compila e testa a solução em pull requests, pushes para `main`, tags `v*` e execuções manuais. Em pull requests também constrói a imagem Docker. Em pushes e tags, publica a imagem no GitHub Container Registry com tags `latest` (branch padrão), `sha-<commit>` e semver.
+O workflow [`ci.yml`](.github/workflows/ci.yml) restaura, compila e testa a solução em pull requests para `main`, pushes para `main` e `develop`, tags `v*` e execuções manuais. Em pull requests também constrói a imagem Docker. A imagem é publicada no GitHub Container Registry apenas em pushes para `main` e tags `v*`, com tags `latest` (branch padrão), `sha-<commit>` e semver.
 
 A análise SonarCloud é opcional. Para habilitá-la, configure o secret `SONAR_TOKEN` e as variáveis de repositório `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`.
 
 ## Estrutura do repositório
+
+Cada projeto em `src/` possui um README com seu papel, os arquivos principais e os pontos em aberto:
+
+- [Domain](src/Fcg.Notifications.Domain/README.md)
+- [Application](src/Fcg.Notifications.Application/README.md)
+- [Infrastructure](src/Fcg.Notifications.Infrastructure/README.md)
+- [WebApi](src/Fcg.Notifications.WebApi/README.md)
 
 ```text
 src/

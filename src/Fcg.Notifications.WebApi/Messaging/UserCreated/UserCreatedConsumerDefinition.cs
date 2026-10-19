@@ -1,4 +1,5 @@
 using Fcg.Contracts.Messaging;
+using Fcg.Notifications.WebApi._Shared.Messaging;
 using MassTransit;
 
 namespace Fcg.Notifications.WebApi.Messaging.UserCreated;
@@ -7,7 +8,9 @@ public sealed class UserCreatedConsumerDefinition : ConsumerDefinition<UserCreat
 {
     public UserCreatedConsumerDefinition(IConfiguration configuration)
     {
-        EndpointName = configuration[$"Messaging:Queues:{nameof(QueueNames.NotificationsUserCreated)}"]
-            ?? QueueNames.NotificationsUserCreated;
+        EndpointName = QueueNameConfiguration.GetQueueName(
+            configuration,
+            nameof(QueueNames.NotificationsUserCreated),
+            QueueNames.NotificationsUserCreated);
     }
 }

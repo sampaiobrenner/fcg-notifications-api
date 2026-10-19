@@ -16,6 +16,12 @@ public static class AuthenticationServiceCollectionExtensions
         if (options.Key.Length < JwtOptions.MinimumKeyLength)
             throw new InvalidOperationException(string.Format(WebApiResources.ChaveJwtInvalida, JwtOptions.MinimumKeyLength));
 
+        if (string.IsNullOrWhiteSpace(options.Issuer))
+            throw new InvalidOperationException(WebApiResources.EmissorJwtAusente);
+
+        if (string.IsNullOrWhiteSpace(options.Audience))
+            throw new InvalidOperationException(WebApiResources.AudienciaJwtAusente);
+
         services.Configure<JwtOptions>(section);
 
         services

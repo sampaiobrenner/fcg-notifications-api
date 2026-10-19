@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Fcg.Notifications.Domain._Shared.Exceptions;
 using Fcg.Notifications.Infrastructure._Shared.Context;
 using FluentValidation;
@@ -35,6 +36,18 @@ public static class MessagingServiceCollectionExtensions
 
             bus.UsingRabbitMq((context, rabbit) =>
             {
+                rabbit.ConfigureJsonSerializerOptions(options =>
+                {
+                    options.Converters.Add(new JsonStringEnumConverter());
+                    return options;
+                });
+
+                rabbit.ConfigureJsonDeserializerOptions(options =>
+                {
+                    options.Converters.Add(new JsonStringEnumConverter());
+                    return options;
+                });
+
                 rabbit.Host(options.Host, options.VirtualHost, host =>
                 {
                     host.Username(options.Username);
