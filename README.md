@@ -1,78 +1,131 @@
-# fcg-notifications-api
+# FCG Notifications API
 
-Microsserviço de **Notificações**: simula o envio de e-mails de boas-vindas e de confirmação de compra por logs no console. Consome `UserCreatedEvent` e `PaymentProcessedEvent` usando RabbitMQ e MassTransit.
+Microsserviço de notificações da plataforma **FIAP Cloud Games (FCG)**. Consome eventos publicados pelos demais serviços e registra no console o envio simulado de e-mails de boas-vindas e de confirmação de compra. O projeto não envia e-mails reais.
 
-Parte da plataforma **FIAP Cloud Games (FCG) - Fase 2**. Este repositório é uma cópia de trabalho pessoal baseada no projeto do grupo originalmente publicado por [Matheus Sampaio](https://github.com/sampaiobrenner/fcg-notifications-api). Os contratos de integração (eventos, JWT e convenções) estão em [`fcg-contracts`](https://github.com/sampaiobrenner/fcg-contracts), e a orquestração (Docker Compose e guia de Kubernetes) está em [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
+Este repositório é uma cópia de trabalho pessoal baseada no serviço desenvolvido pelo grupo e originalmente publicado por [Matheus Sampaio](https://github.com/sampaiobrenner/fcg-notifications-api). Os contratos de integração são mantidos em [`fcg-contracts`](https://github.com/sampaiobrenner/fcg-contracts); a infraestrutura local e os guias de implantação ficam em [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
 
-## Stack
+## Responsabilidades
 
-.NET 10 · Minimal API · MediatR 12 · FluentValidation · EF Core 10 + PostgreSQL · MassTransit 8 + RabbitMQ (EF Core Outbox/Inbox) · JWT · Serilog · OpenAPI + Scalar · xUnit.
+O serviço consome os eventos via RabbitMQ e MassTransit:
 
-## Arquitetura
+| Evento | Fila | Comportamento |
+|---|---|---|
+| `UserCreatedEvent` | `notifications.user-created` | Registra no console o e-mail de boas-vindas simulado. |
+| `PaymentProcessedEvent` | `notifications.payment-processed` | Registra a confirmação da compra quando o pagamento é aprovado. Pagamentos rejeitados são registrados sem enviar confirmação. |
 
-Camadas com dependência estritamente para dentro: `WebApi -> Infrastructure -> Application -> Domain`.
-
-```
-src/
-  Fcg.Notifications.Domain/           Regras de negocio. Organizado por agregado.
-    _Shared/                    Modules, DomainModelBase/PersistenceModelBase, IDomainEvent, BusinessException
-  Fcg.Notifications.Application/      Casos de uso (MediatR). Organizado por <Agregado>/<CasoDeUso>/.
-    _Shared/                    INotificationsDbContext (leitura), Parser<TIn,TOut>, IIntegrationEventPublisher, ValidationBehavior
-  Fcg.Notifications.Infrastructure/   Portas de saida: DbContext, repositorios, publicacao de eventos. Organizado por agregado.
-    _Shared/                    NotificationsDbContext (+ tabelas de outbox/inbox), MassTransitIntegrationEventPublisher
-  Fcg.Notifications.WebApi/           Portas de entrada: endpoints REST e consumers. Organizado por <Agregado>/<CasoDeUso>/.
-    _Shared/                    Endpoints (IEndpoint), erros (ProblemDetails), JWT, mensageria, health checks, migrations
-test/
-  Fcg.Notifications.UnitTests/        Espelha src/ 1:1
-  Fcg.Notifications.IntegrationTests/ WebApplicationFactory + MassTransit test harness
+```mermaid
+flowchart LR
+    Users[Users API] -->|UserCreatedEvent| Welcome[Notifications API]
+    Payments[Payments API] -->|PaymentProcessedEvent| Purchase[Notifications API]
+    Welcome --> WelcomeLog[Log de boas-vindas]
+    Purchase --> PurchaseLog[Log de confirmação se aprovado]
 ```
 
-Diretrizes:
+As filas e os eventos são definidos pelo pacote [`PosTech.Fiap.CloudGames.Contracts`](https://www.nuget.org/packages/PosTech.Fiap.CloudGames.Contracts), compartilhado pelos microsserviços.
 
-- **Um caso de uso = uma pasta** com `Command`/`Query`, `Handler`, `Validator`, `Parser` e, na WebApi, o `Endpoint` (implementa `IEndpoint`) ou o `Consumer`.
-- **Escrita:** handler -> servico/modelo de dominio -> repositorio do agregado (recebe e devolve o modelo de dominio).
-- **Leitura:** handler projeta direto de `INotificationsDbContext.DataSet<T>()`, sem repositorio.
-- **Dominio:** `DomainModel` (comportamento) envolve o `PersistenceModel` (mapeado pelo EF via `IEntityTypeConfiguration<T>`, descoberto automaticamente).
-- **Mapeamento:** `Parser<TIn,TOut>` explicito, sem AutoMapper.
-- **Mensagens de erro:** sempre em `Properties/*Resources.resx` da propria camada, nunca string literal.
-- **DI:** cada camada registra seus servicos no seu `FcgNotifications<Camada>Module`; `Program.cs` apenas compoe os 4 modulos.
-- **Eventos de integracao:** publicados via `IIntegrationEventPublisher` antes do `SaveChangesAsync` - o outbox grava na mesma transacao.
-- **Consumers:** ficam na WebApi, delegam para um `Command` via MediatR e sao idempotentes (inbox do MassTransit). Cada consumer tem um `ConsumerDefinition` com `EndpointName` igual a constante de `Fcg.Contracts.Messaging.QueueNames`.
-- **Contratos:** eventos, filas, claims e papeis vem do pacote `PosTech.Fiap.CloudGames.Contracts`; nunca redefina localmente.
-- **Usuario autenticado:** injete `ICurrentUser` (Application/_Shared/Security), que le as claims `sub`, `email`, `name` e `role` do token.
-- **Erros HTTP:** `ValidationException` 400, `UnauthorizedException` 401, `ForbiddenException` 403, `NotFoundException` 404, `ConflictException` 409, `BusinessException` 422.
-- **JSON:** camelCase e enums como string.
+## Tecnologias
 
-Exemplo de caso de uso:
+- .NET 10 e ASP.NET Core Minimal API
+- RabbitMQ e MassTransit 8
+- PostgreSQL e Entity Framework Core 10
+- Serilog, OpenAPI e Scalar
+- Docker e Kubernetes
+- xUnit para testes automatizados
 
-```
-Application/Games/CreateGame/CreateGameCommand.cs
-Application/Games/CreateGame/CreateGameCommandHandler.cs
-Application/Games/CreateGame/CreateGameCommandValidator.cs
-Application/Games/CreateGame/CreateGameResponseParser.cs
-WebApi/Games/CreateGame/CreateGameEndpoint.cs
-```
+## Pré-requisitos
 
-## Executando localmente
+- .NET SDK 10
+- Docker com Docker Compose
+- Acesso às dependências da plataforma: PostgreSQL e RabbitMQ
 
-Pré-requisitos: .NET SDK 10 e a infraestrutura do [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration) (`docker compose up -d`).
+## Executar localmente
+
+Para executar apenas este serviço, inicie PostgreSQL e RabbitMQ pelo repositório de orquestração:
 
 ```bash
+git clone https://github.com/sampaiobrenner/fcg-orchestration.git
+cd fcg-orchestration
+docker compose up -d postgres rabbitmq
+```
+
+Em outro terminal, na raiz deste repositório, configure a conexão com esses serviços e inicie a API:
+
+```bash
+export ConnectionStrings__Default='Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg'
+export RabbitMq__Host=localhost
+export RabbitMq__Username=fcg
+export RabbitMq__Password=fcg
+export Jwt__Key='fcg-dev-only-signing-key-change-me-0123456789'
+
 dotnet run --project src/Fcg.Notifications.WebApi
 ```
 
-- API: http://localhost:5104
-- Documentacao (Scalar): http://localhost:5104/scalar/v1
-- Health: `/health/live` e `/health/ready`
+As migrations pendentes do banco são aplicadas na inicialização quando `Database__ApplyMigrationsOnStartup=true`, valor padrão do projeto.
 
-Migrations (as pendentes sao aplicadas no startup quando `Database__ApplyMigrationsOnStartup=true`):
+| Endereço | Uso |
+|---|---|
+| <http://localhost:5104/scalar/v1> | Documentação OpenAPI/Scalar |
+| <http://localhost:5104/health/live> | Verificação de processo ativo |
+| <http://localhost:5104/health/ready> | Verificação de prontidão do banco de dados |
+
+Os eventos consumidos são exibidos no log da aplicação. Para executar o fluxo completo com Users API, Catalog API e Payments API, consulte as instruções do [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
+
+## Configuração
+
+As configurações podem ser definidas em `appsettings.json` ou por variáveis de ambiente. No Kubernetes, valores não sensíveis ficam no ConfigMap e credenciais ficam no Secret.
+
+| Variável | Obrigatória | Descrição | Exemplo local |
+|---|---:|---|---|
+| `ASPNETCORE_ENVIRONMENT` | Não | Ambiente de execução. | `Development` |
+| `ASPNETCORE_HTTP_PORTS` | Não | Porta HTTP da aplicação no container. | `8080` |
+| `ConnectionStrings__Default` | Sim | Conexão com o banco PostgreSQL. | `Host=localhost;Port=5432;Database=fcg_notifications;Username=fcg;Password=fcg` |
+| `Database__ApplyMigrationsOnStartup` | Não | Aplica migrations ao iniciar. | `true` |
+| `RabbitMq__Host` | Sim | Host do RabbitMQ. | `localhost` |
+| `RabbitMq__VirtualHost` | Não | Virtual host do broker. | `/` |
+| `RabbitMq__Username` | Sim | Usuário do RabbitMQ. | `fcg` |
+| `RabbitMq__Password` | Sim | Senha do RabbitMQ. | `fcg` |
+| `Messaging__Queues__NotificationsUserCreated` | Não | Fila de `UserCreatedEvent`. | `notifications.user-created` |
+| `Messaging__Queues__NotificationsPaymentProcessed` | Não | Fila de `PaymentProcessedEvent`. | `notifications.payment-processed` |
+| `Jwt__Issuer` | Não | Emissor aceito para tokens JWT. | `fcg-users-api` |
+| `Jwt__Audience` | Não | Público aceito para tokens JWT. | `fcg` |
+| `Jwt__Key` | Sim | Chave simétrica compartilhada pelos serviços; use pelo menos 32 caracteres. | Defina uma chave local segura. |
+
+Os nomes padrão das filas vêm das constantes do pacote de contratos. Os valores de exemplo deste README e de `k8s/secret.yaml` são exclusivos para desenvolvimento local; não os reutilize em ambientes compartilhados ou de produção.
+
+## Docker
+
+O `Dockerfile` usa build em múltiplos estágios, imagem de runtime .NET 10 e usuário sem privilégios. Para construir a imagem:
 
 ```bash
-dotnet tool restore
-dotnet ef migrations add <Nome> -p src/Fcg.Notifications.Infrastructure -s src/Fcg.Notifications.WebApi -o _Shared/Context/Migrations
+docker build -t fcg-notifications-api:local .
 ```
 
+O container escuta na porta `8080`. Para integrar a aplicação com PostgreSQL e RabbitMQ em containers, execute a stack pelo repositório de orquestração ou conecte os serviços à mesma rede Docker.
+
+## Kubernetes
+
+A pasta [`k8s/`](k8s/) contém os manifests deste microsserviço:
+
+| Manifesto | Recurso |
+|---|---|
+| `deployment.yaml` | Deployment da API com probes e limites de recursos. |
+| `service.yaml` | Service interno `notifications-api`, porta `80`. |
+| `configmap.yaml` | Ambiente, host do broker, nomes de filas e configuração JWT não sensível. |
+| `secret.yaml` | Credenciais locais de PostgreSQL, RabbitMQ e JWT. |
+
+Com PostgreSQL e RabbitMQ já disponíveis no mesmo namespace, aplique os manifests:
+
+```bash
+kubectl apply -f k8s/
+kubectl rollout status deployment/notifications-api
+kubectl get pods -l app=notifications-api
+```
+
+O Deployment usa `ghcr.io/samueltorres-io/fcg-notifications-api:latest`. A imagem é publicada pelo workflow de CI após um push na branch padrão. Para instalar a plataforma completa e suas dependências, use os manifests do [`fcg-orchestration`](https://github.com/sampaiobrenner/fcg-orchestration).
+
 ## Testes
+
+Execute os testes de unidade e integração com:
 
 ```bash
 dotnet test
@@ -80,44 +133,20 @@ dotnet test
 
 ## CI/CD
 
-Workflow unico [`ci.yml`](.github/workflows/ci.yml):
+O workflow [`ci.yml`](.github/workflows/ci.yml) restaura, compila e testa a solução em pull requests, pushes para `main`, tags `v*` e execuções manuais. Em pull requests também constrói a imagem Docker. Em pushes e tags, publica a imagem no GitHub Container Registry com tags `latest` (branch padrão), `sha-<commit>` e semver.
 
-| Job | Quando | O que faz |
-|---|---|---|
-| `build-test` | PR, push na `main`, tags `v*` | restore, build, testes com cobertura e análise opcional no SonarCloud (configurar `SONAR_TOKEN` e as variáveis `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`) |
-| `docker` | PR | build da imagem |
-| `publish` | push na `main` e tags `v*`, após os testes | publica `ghcr.io/samueltorres-io/fcg-notifications-api` (`latest`, `sha-<commit>`, semver) diretamente no GitHub Container Registry |
+A análise SonarCloud é opcional. Para habilitá-la, configure o secret `SONAR_TOKEN` e as variáveis de repositório `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`.
 
-## Docker
+## Estrutura do repositório
 
-```bash
-docker build -t fcg-notifications-api .
+```text
+src/
+  Fcg.Notifications.Domain/         Tipos e regras compartilhadas do domínio
+  Fcg.Notifications.Application/    Abstrações de aplicação, segurança e validação
+  Fcg.Notifications.Infrastructure/ Persistência, migrations e integração com o outbox
+  Fcg.Notifications.WebApi/         Minimal API, configuração, health checks e consumers
+test/
+  Fcg.Notifications.UnitTests/
+  Fcg.Notifications.IntegrationTests/
+k8s/                                Manifests do microsserviço
 ```
-
-Imagem multi-stage (`sdk:10.0` -> `aspnet:10.0`), usuario non-root, porta `8080`.
-
-## Kubernetes
-
-Manifests em [`k8s/`](k8s): `deployment.yaml`, `service.yaml` (`notifications-api:80`), `configmap.yaml`, `secret.yaml`.
-
-```bash
-kubectl apply -f k8s/
-```
-
-## Variaveis de ambiente
-
-| Variavel | Origem K8s | Descricao | Exemplo |
-|---|---|---|---|
-| `ASPNETCORE_ENVIRONMENT` | ConfigMap | Ambiente | `Production` |
-| `ASPNETCORE_HTTP_PORTS` | Dockerfile | Porta HTTP | `8080` |
-| `ConnectionStrings__Default` | Secret | Conexao PostgreSQL | `Host=postgres;Port=5432;Database=fcg_notifications;Username=fcg;Password=***` |
-| `Database__ApplyMigrationsOnStartup` | ConfigMap | Aplica migrations no startup | `true` |
-| `RabbitMq__Host` | ConfigMap | Host do RabbitMQ | `rabbitmq` |
-| `RabbitMq__VirtualHost` | ConfigMap | Virtual host | `/` |
-| `Messaging__Queues__NotificationsUserCreated` | ConfigMap | Fila do evento de cadastro | `notifications.user-created` |
-| `Messaging__Queues__NotificationsPaymentProcessed` | ConfigMap | Fila do resultado do pagamento | `notifications.payment-processed` |
-| `RabbitMq__Username` | Secret | Usuario do RabbitMQ | `fcg` |
-| `RabbitMq__Password` | Secret | Senha do RabbitMQ | `***` |
-| `Jwt__Issuer` | ConfigMap | Emissor do token | `fcg-users-api` |
-| `Jwt__Audience` | ConfigMap | Audiencia do token | `fcg` |
-| `Jwt__Key` | Secret | Chave simetrica (min. 32 caracteres, igual em todos os servicos) | `***` |
