@@ -2,14 +2,14 @@
 
 Esta camada é a porta de entrada e o ponto de composição do serviço. Hospeda a Minimal API, configura autenticação, health checks e RabbitMQ, além de receber os eventos de integração publicados pelos outros microsserviços.
 
-> **Estado atual:** os fluxos funcionais são consumidores assíncronos. Não há endpoints REST de negócio implementados; a API HTTP expõe documentação OpenAPI/Scalar e verificações de saúde.
+> **Estado atual:** os fluxos funcionais são consumidores assíncronos. Não há endpoints REST de negócio implementados; a API HTTP expõe documentação OpenAPI/Scalar somente nos ambientes Development e Testing, além das verificações de saúde.
 
 ## Arquivos principais
 
 | Arquivo ou diretório | Responsabilidade |
 |---|---|
 | `Fcg.Notifications.WebApi.csproj` | Configura a aplicação web e suas dependências de autenticação, contratos compartilhados, OpenAPI, Scalar, Serilog, MassTransit e EF Design. Define o identificador de User Secrets para desenvolvimento. |
-| `Program.cs` | Compõe os quatro módulos, aplica migrations configuradas, registra middlewares e mapeia OpenAPI, Scalar, health checks e endpoints. |
+| `Program.cs` | Compõe os quatro módulos, aplica migrations configuradas, registra middlewares, mapeia OpenAPI/Scalar em Development e Testing, além de health checks e endpoints. |
 | `FcgNotificationsWebApiModule.cs` | Registra Problem Details, handler global, serialização de enums, usuário atual, autenticação JWT, mensageria, health checks e endpoints. |
 | `appsettings.json` | Define configurações não secretas e defaults de runtime para banco, RabbitMQ, nomes de filas, JWT e Serilog. Chaves e senhas não devem ser armazenadas aqui. |
 | `Properties/launchSettings.json` | Perfil local HTTP, porta `5104`, ambiente `Development` e URL inicial do Scalar. |

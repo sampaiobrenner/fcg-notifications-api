@@ -29,8 +29,11 @@ app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 app.MapHealthEndpoints();
 app.MapEndpoints();
 

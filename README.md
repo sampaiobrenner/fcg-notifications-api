@@ -68,7 +68,7 @@ As migrations pendentes do banco são aplicadas na inicialização quando `Datab
 
 | Endereço | Uso |
 |---|---|
-| <http://localhost:5104/scalar/v1> | Documentação OpenAPI/Scalar |
+| <http://localhost:5104/scalar/v1> | Documentação OpenAPI/Scalar (Development e Testing) |
 | <http://localhost:5104/health/live> | Verificação de processo ativo |
 | <http://localhost:5104/health/ready> | Verificação de prontidão do banco de dados |
 
@@ -137,7 +137,7 @@ dotnet test
 
 ## CI/CD
 
-O workflow [`ci.yml`](.github/workflows/ci.yml) restaura, compila e testa a solução em pull requests, pushes para `main`, tags `v*` e execuções manuais. Em pull requests também constrói a imagem Docker. Em pushes e tags, publica a imagem no GitHub Container Registry com tags `latest` (branch padrão), `sha-<commit>` e semver.
+O workflow [`ci.yml`](.github/workflows/ci.yml) restaura, compila e testa a solução em pull requests para `main`, pushes para `main` e `develop`, tags `v*` e execuções manuais. Em pull requests também constrói a imagem Docker. A imagem é publicada no GitHub Container Registry apenas em pushes para `main` e tags `v*`, com tags `latest` (branch padrão), `sha-<commit>` e semver.
 
 A análise SonarCloud é opcional. Para habilitá-la, configure o secret `SONAR_TOKEN` e as variáveis de repositório `SONAR_PROJECT_KEY` e `SONAR_ORGANIZATION`.
 
