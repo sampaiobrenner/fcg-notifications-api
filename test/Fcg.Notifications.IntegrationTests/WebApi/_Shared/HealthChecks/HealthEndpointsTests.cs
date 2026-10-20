@@ -23,5 +23,15 @@ public class HealthEndpointsTests : IClassFixture<NotificationsWebApplicationFac
         var response = await _client.GetAsync("/openapi/v1.json");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        (await response.Content.ReadAsStringAsync()).Should().Contain("openapi");
+    }
+
+    [Fact]
+    public async Task RotaInexistente_DeveRetornarNaoEncontrado()
+    {
+        var response = await _client.GetAsync("/rota-inexistente");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
