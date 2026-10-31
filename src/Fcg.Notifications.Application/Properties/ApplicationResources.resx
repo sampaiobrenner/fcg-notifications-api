@@ -21,4 +21,13 @@
   <data name="EmailBoasVindasCorpo" xml:space="preserve">
     <value>Ola {0}, sua conta foi criada com sucesso. Aproveite o catalogo de jogos!</value>
   </data>
+  <data name="UsuarioAindaNaoConhecido" xml:space="preserve">
+    <value>Usuário '{0}' ainda não está na projeção local (known_users); a mensagem será reprocessada.</value>
+  </data>
+  <data name="EmailCompraConfirmadaAssunto" xml:space="preserve">
+    <value>Compra confirmada - pedido {0}</value>
+  </data>
+  <data name="EmailCompraConfirmadaCorpo" xml:space="preserve">
+    <value>Ola {0}, o pagamento de R$ {1:0.00} foi aprovado e o jogo ja esta disponivel na sua biblioteca.</value>
+  </data>
 </root>

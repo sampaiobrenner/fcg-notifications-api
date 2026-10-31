@@ -30,8 +30,19 @@ public static class MessagingServiceCollectionExtensions
                 outbox.UseBusOutbox();
             });
 
+            // Retry e outbox/inbox por endpoint (nesta ordem): cada tentativa usa um escopo/DbContext novo, e a politica
+            // vale para qualquer transporte (RabbitMQ em execucao, in-memory no ITestHarness dos testes de integracao).
             bus.AddConfigureEndpointsCallback((context, _, endpoint) =>
-                endpoint.UseEntityFrameworkOutbox<NotificationsDbContext>(context));
+            {
+                endpoint.UseMessageRetry(retry =>
+                {
+                    retry.Intervals(RetryIntervals);
+                    retry.Ignore<BusinessException>();
+                    retry.Ignore<ValidationException>();
+                });
+
+                endpoint.UseEntityFrameworkOutbox<NotificationsDbContext>(context);
+            });
 
             bus.UsingRabbitMq((context, rabbit) =>
             {
@@ -39,13 +50,6 @@ public static class MessagingServiceCollectionExtensions
                 {
                     host.Username(options.Username);
                     host.Password(options.Password);
-                });
-
-                rabbit.UseMessageRetry(retry =>
-                {
-                    retry.Intervals(RetryIntervals);
-                    retry.Ignore<BusinessException>();
-                    retry.Ignore<ValidationException>();
                 });
 
                 rabbit.ConfigureEndpoints(context);
