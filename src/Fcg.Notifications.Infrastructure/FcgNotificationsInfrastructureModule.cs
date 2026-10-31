@@ -1,8 +1,14 @@
 using Fcg.Notifications.Application._Shared.Contexts;
+using Fcg.Notifications.Application._Shared.Email;
 using Fcg.Notifications.Application._Shared.Messaging;
 using Fcg.Notifications.Domain._Shared.Modules;
+using Fcg.Notifications.Domain.EmailLogs;
+using Fcg.Notifications.Domain.KnownUsers;
 using Fcg.Notifications.Infrastructure._Shared.Context;
 using Fcg.Notifications.Infrastructure._Shared.Messaging;
+using Fcg.Notifications.Infrastructure.Email;
+using Fcg.Notifications.Infrastructure.EmailLogs;
+using Fcg.Notifications.Infrastructure.KnownUsers;
 using Fcg.Notifications.Infrastructure.Properties;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,5 +37,9 @@ public sealed class FcgNotificationsInfrastructureModule : IModule
 
         services.AddScoped<INotificationsDbContext>(provider => provider.GetRequiredService<NotificationsDbContext>());
         services.AddScoped<IIntegrationEventPublisher, MassTransitIntegrationEventPublisher>();
+
+        services.AddScoped<IKnownUserRepository, KnownUserRepository>();
+        services.AddScoped<IEmailLogRepository, EmailLogRepository>();
+        services.AddSingleton<IEmailSender, ConsoleEmailSender>();
     }
 }
